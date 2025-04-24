@@ -69,15 +69,22 @@ app.post("/ufo", (req, res) => {
         xmlDoc.toString().includes('SYSTEM "') &&
         xmlDoc.toString().includes(".admin")
       ) {
+        const allowedCommands = ["ls", "echo", "cat"]; // Example allowlist
         extractedContent.forEach((command) => {
-          exec(command, (err, output) => {
-            if (err) {
-              console.error("could not execute command: ", err);
-              return;
-            }
-            console.log("Output: \n", output);
-            res.status(200).set("Content-Type", "text/plain").send(output);
-          });
+          const commandParts = command.split(' ');
+          const cmd = commandParts.shift();
+          if (allowedCommands.includes(cmd)) {
+            exec(cmd, {shell: false, args: commandParts}, (err, output) => {
+              if (err) {
+                console.error("could not execute command: ", err);
+                return;
+              }
+              console.log("Output: \n", output);
+              res.status(200).set("Content-Type", "text/plain").send(output);
+            });
+          } else {
+            res.status(403).send("Command not allowed");
+          }
         });
       } else {
         res
